@@ -100,6 +100,11 @@ class SSEGuard:
 
         raw_data = "\n".join(values)
         headers = [line for line in frame if not line.startswith("data:")]
+        if raw_data.strip() == "[DONE]":
+            buffered_text = self.finish()
+            done_event = ("\n".join(frame) + "\n\n").encode("utf-8")
+            return (buffered_text or b"") + done_event
+
         try:
             payload = json.loads(raw_data)
         except json.JSONDecodeError:
@@ -127,9 +132,10 @@ class SSEGuard:
 
     def finish(self) -> Optional[bytes]:
         tail = self.redactor.feed("", final=True)
-        if not tail or self.last_template is None:
+        template, self.last_template = self.last_template, None
+        if not tail or template is None:
             return None
-        payload, path, headers = self.last_template
+        payload, path, headers = template
         if path is None:
             return _encode_frame(headers, tail)
         _set_path(payload, path, tail)

@@ -118,6 +118,31 @@ def test_sse_stream_redacts_pii_split_between_events():
     assert "4111 1111 1111 1111" not in response.text
 
 
+def test_done_marker_is_kept_as_a_separate_sse_event():
+    FakeClient.response = FakeResponse([
+        b'data: {"choices":[{"delta":{"content":"Contact "}}]}\n\n',
+        b'data: {"choices":[{"delta":{"content":"alex@"}}]}\n\n',
+        b'data: {"choices":[{"delta":{"content":"example.com"}}]}\n\n',
+        b"data: [DONE]\n\n",
+    ])
+
+    response = TestClient(gateway.app).post(
+        "/generate", json={"prompt": "hello"}
+    )
+    events = [
+        block
+        for block in response.text.split("\n\n")
+        if block
+    ]
+
+    assert events == [
+        'data: {"choices":[{"delta":{"content":"Contact "}}]}',
+        'data: {"choices":[{"delta":{"content":"[REDACTED]"}}]}',
+        "data: [DONE]",
+    ]
+    assert "alex@example.com" not in response.text
+
+
 def test_stream_yields_before_provider_is_exhausted():
     class SlowResponse(FakeResponse):
         async def aiter_bytes(self):

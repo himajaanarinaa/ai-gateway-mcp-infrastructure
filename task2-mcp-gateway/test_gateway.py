@@ -100,7 +100,7 @@ def test_viewer_admin_call_is_blocked_without_forwarding():
     assert response.json() == {
         "jsonrpc": "2.0",
         "id": "blocked-1",
-        "error": {"code": -32001, "message": "Forbidden"},
+        "error": {"code": -32001, "message": "Unauthorized Tool Call"},
     }
     assert FakeAsyncClient.calls == []
 

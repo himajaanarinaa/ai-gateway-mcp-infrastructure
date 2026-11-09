@@ -69,7 +69,7 @@ async def proxy(
         if not isinstance(name, str):
             return JSONResponse(rpc_error(payload["id"], -32602, "Invalid params"))
         if name.startswith("admin_") and role != "admin":
-            return JSONResponse(rpc_error(payload["id"], -32001, "Forbidden"))
+            return JSONResponse(rpc_error(payload["id"], -32001, "Unauthorized Tool Call"))
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
